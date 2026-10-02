@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <system.webServer>
+
+    <!-- Default document setup -->
+    <defaultDocument>
+      <files>
+        <clear />
+        <add value="index.php" />
+        <add value="index.html" />
+      </files>
+    </defaultDocument>
+
+    <!-- PHP and static file handler -->
+    <handlers accessPolicy="Read, Execute, Script">
+      <clear />
+      <add name="PHP via FastCGI" path="*.php" verb="*" modules="FastCgiModule" scriptProcessor="C:\PHP\php-cgi.exe" resourceType="File" />
+      <add name="StaticFile" path="*" verb="*" modules="StaticFileModule,DefaultDocumentModule,DirectoryListingModule" resourceType="Either" requireAccess="Read" />
+    </handlers>
+
+    <!-- URL Rewrite Rules -->
+    <rewrite>
+      <rules>
+
+        <!-- 1. Redirect all HTTP to HTTPS -->
+        <rule name="Redirect to HTTPS" stopProcessing="true">
+          <match url="(.*)" />
+          <conditions>
+            <add input="{HTTPS}" pattern="off" ignoreCase="true" />
+          </conditions>
+          <action type="Redirect" url="https://{HTTP_HOST}/{R:1}" redirectType="Permanent" />
+        </rule>
+
+        <!-- 2. Redirect www to non-www -->
+        <rule name="Redirect WWW to non-WWW" enabled="true" stopProcessing="true">
+          <match url="(.*)" ignoreCase="true" />
+          <conditions>
+            <add input="{HTTP_HOST}" pattern="^www\.(.+)$" ignoreCase="true" />
+          </conditions>
+          <action type="Redirect" url="https://{C:1}/{R:1}" redirectType="Permanent" />
+        </rule>
+
+        <!-- 3. Redirect .php URLs to clean URLs -->
+        <rule name="Redirect .php to clean URL" stopProcessing="true">
+          <match url="(.*)\.php$" />
+          <conditions>
+            <add input="{REQUEST_FILENAME}" matchType="IsFile" />
+          </conditions>
+          <action type="Redirect" url="https://{HTTP_HOST}/{R:1}" redirectType="Permanent" />
+        </rule>
+
+        <!-- 4. Add trailing slash for directories -->
+        <rule name="Add trailing slash for directories" stopProcessing="true">
+          <match url="(.*[^/])$" />
+          <conditions>
+            <add input="{DOCUMENT_ROOT}\{R:1}" matchType="IsDirectory" />
+          </conditions>
+          <action type="Redirect" url="https://{HTTP_HOST}/{R:1}/" redirectType="Permanent" />
+        </rule>
+
+        <!-- 5. Directory index support -->
+        <rule name="Directory index support" stopProcessing="true">
+          <match url="^(.*?)/?$" />
+          <conditions>
+            <add input="{DOCUMENT_ROOT}\{R:1}\index.php" matchType="IsFile" />
+          </conditions>
+          <action type="Rewrite" url="{R:1}/index.php" />
+        </rule>
+
+        <!-- 6. Rewrite clean URLs to .php (exclude static files) -->
+        <rule name="Rewrite clean URL to .php" stopProcessing="true">
+          <match url="^(.*)$" />
+          <conditions>
+            <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
+            <add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true" />
+            <add input="{DOCUMENT_ROOT}\{R:1}.php" matchType="IsFile" />
+            <!-- Exclude static assets and files like .apk -->
+            <add input="{R:1}" pattern="^.*\.(jpg|jpeg|png|gif|css|js|pdf|svg|ico|webp|apk|zip|rar|txt|xml|json|mp4|webm|ogg)$" negate="true" />
+          </conditions>
+          <action type="Rewrite" url="{R:1}.php" />
+        </rule>
+
+        <!-- 7. Home page route -->
+        <rule name="Home page route" stopProcessing="true">
+          <match url="^home$" />
+          <action type="Rewrite" url="index.php" />
+        </rule>
+
+        <!-- 8. Blog route -->
+        <rule name="Blog route" stopProcessing="true">
+          <match url="^blog/([A-Za-z0-9-]+)$" />
+          <action type="Rewrite" url="detail.php?slug={R:1}" />
+        </rule>
+
+        <!-- 9. View route -->
+        <rule name="View route" stopProcessing="true">
+          <match url="^view/([A-Za-z0-9-]+)$" />
+          <action type="Rewrite" url="detail-view.php?slug={R:1}" />
+        </rule>
+
+        <!-- 10. Page route (exclude static files) -->
+        <rule name="Page route" stopProcessing="true">
+          <match url="^([^/]+)/?$" />
+          <conditions>
+            <add input="{R:1}" pattern="^.*\.(jpg|jpeg|png|gif|css|js|pdf|svg|ico|webp|apk|zip|rar|txt|xml|json|mp4|webm|ogg)$" negate="true" />
+          </conditions>
+          <action type="Rewrite" url="cms-page.php?cms_path={R:1}" appendQueryString="true" />
+        </rule>
+
+      </rules>
+    </rewrite>
+
+  </system.webServer>
+</configuration>

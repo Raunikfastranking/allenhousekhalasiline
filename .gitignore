@@ -1,0 +1,21 @@
+node_modules/
+vendor/
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
+cache/
+**/cache/
+_probe*
+_carousel*.json
+.tmp-static/
+test.php
+*.bak
+index.legacy.php.bak
+Allenhouse Khalasi Lines Brochure printable File.pdf
+APS Khalasi line - Last Three Year Result Of The Board Examination.pdf
+APS_Brochure_Rooma_Final.pdf
