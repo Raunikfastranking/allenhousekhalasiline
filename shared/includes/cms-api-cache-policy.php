@@ -10,17 +10,22 @@ if (!function_exists('cmsApiUsesFileCache')) {
     function cmsApiUsesFileCache(): bool
     {
         if (isset($_GET['clear_cache']) || isset($_GET['clear-cache']) || isset($_GET['nocache'])) {
-            $cacheFile = function_exists('cmsApiScopedCachePath') ? cmsApiScopedCachePath() : '';
-            if ($cacheFile !== '' && is_file($cacheFile)) {
-                @unlink($cacheFile);
+            static $cleared = false;
+            if (!$cleared) {
+                $cleared = true;
+                if (function_exists('cmsApiScopedCacheClearAll')) {
+                    cmsApiScopedCacheClearAll();
+                } else {
+                    $cacheFile = function_exists('cmsApiScopedCachePath') ? cmsApiScopedCachePath() : '';
+                    if ($cacheFile !== '' && is_file($cacheFile)) {
+                        @unlink($cacheFile);
+                    }
+                }
             }
             return false;
         }
 
-        if (function_exists('is_app_local') && is_app_local()) {
-            return false;
-        }
-
+        // Explicit env setting wins — keeps file cache on for local/staging testing.
         $env = getenv('CMS_FILE_CACHE');
         if ($env !== false) {
             $value = strtolower(trim((string) $env));
@@ -30,6 +35,10 @@ if (!function_exists('cmsApiUsesFileCache')) {
             }
 
             return in_array($value, ['1', 'true', 'yes', 'on'], true);
+        }
+
+        if (function_exists('is_app_local') && is_app_local()) {
+            return false;
         }
 
         return true;
@@ -80,14 +89,19 @@ if (!function_exists('cmsApiEndpointTtl')) {
         if (str_starts_with($key, 'page_')) {
             return $contentTtl;
         }
+        if (str_starts_with($key, 'legacy_')) {
+            return 1800;
+        }
 
         return match ($key) {
             'home_data', 'landing_data' => $contentTtl,
-            'scroll_text_data', 'flyer_data', 'blogData' => max($contentTtl, 600),
-            'statistics_data', 'statistic_data' => 1800,
-            'photo_gallery_data', 'achievement_gallery_data', 'gallery_data', 'jobs_data' => 1800,
+            // Content admins edit these — keep close to content TTL so CMS
+            // updates surface within ~a minute, not half an hour.
+            'scroll_text_data', 'flyer_data', 'blogData' => max($contentTtl, 300),
+            'statistics_data', 'statistic_data' => max($contentTtl, 300),
+            'photo_gallery_data', 'achievement_gallery_data', 'gallery_data', 'jobs_data' => max($contentTtl, 300),
             // Menu/nav is also force-refetched (cmsApiEndpointRequiresLiveFetch) so CMS
-            // add/remove is visible on the next page load — not stuck for up to 2 hours.
+            // add/remove is visible on the next page load — not stuck in cache.
             'menu_data' => $contentTtl,
             'header_footer_data' => max($contentTtl, 300),
             // Keep short so newly created CMS pages resolve without waiting hours.
@@ -97,9 +111,5 @@ if (!function_exists('cmsApiEndpointTtl')) {
             'grades_data', 'cities_data' => 24 * 3600,
             default => $contentTtl,
         };
-
-        if (str_starts_with($key, 'legacy_')) {
-            return 3600;
-        }
     }
 }
