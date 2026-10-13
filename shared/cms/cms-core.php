@@ -597,18 +597,44 @@ if (!function_exists('cmsCoreConfig')) {
         }
 
         $fileKey = 'page_' . $slug;
-        if (!$forceLive && function_exists('cmsScopedFileCacheGet')) {
-            $fileCached = cmsScopedFileCacheGet($fileKey);
-            if (
-                is_array($fileCached)
-                && !empty($fileCached['data'])
-                && cmsPageIsPublished($fileCached)
-                && !cmsPageNeedsLiveRefresh($slug, $fileCached)
-            ) {
-                $cache[$cacheKey] = $fileCached;
 
-                return $fileCached;
+        // Serve the cached page immediately and revalidate in the background.
+        // The /pages/<slug> endpoint takes ~4-5s — a blocking live fetch on the
+        // requested page made every view slow. Freshness stays ~seconds because
+        // any hit older than $refreshAfter seconds schedules an async refetch.
+        $refreshAfter = 15;
+        if (function_exists('cmsApiReadKeyCache')) {
+            $rawEntry = cmsApiReadKeyCache($fileKey);
+        } else {
+            $rawEntry = ['data' => null, 'time' => 0];
+        }
+        $rawCached = is_array($rawEntry['data']) ? $rawEntry['data'] : null;
+        if (is_array($rawCached) && !empty($rawCached['data']) && cmsPageIsPublished($rawCached)) {
+            // Gallery listing pages keep items in the galleries API, not page
+            // sections — empty sections are normal for them, so the
+            // needs-live-refresh heuristic shouldn't force a blocking fetch.
+            $isGalleryShell = cmsPageGalleryMeta($slug) !== null
+                && cmsPageSectionsAreGalleryShell($rawCached);
+            $needsLive = cmsPageNeedsLiveRefresh($slug, $rawCached);
+            if ($needsLive && !$isGalleryShell) {
+                $rawCached = null;
             }
+        }
+        if (is_array($rawCached)) {
+            $cache[$cacheKey] = $rawCached;
+            if ($forceLive) {
+                $cache[$slug] = $rawCached;
+            }
+            if (
+                function_exists('cmsApiRefreshScopedKeysAsync')
+                && ((int) $rawEntry['time'] <= 0 || (time() - (int) $rawEntry['time']) >= $refreshAfter)
+            ) {
+                // Viewed page revalidates every ~15s in the background — CMS
+                // edits surface within seconds, never behind the cache TTL.
+                cmsApiRefreshScopedKeysAsync([$fileKey => '/pages/' . rawurlencode($slug)]);
+            }
+
+            return $rawCached;
         }
 
         $endpoint = 'pages/' . rawurlencode($slug);
@@ -631,10 +657,11 @@ if (!function_exists('cmsCoreConfig')) {
             }
         }
         if (
-            $forceLive
-            && (!is_array($page) || empty($page['data']))
+            (!is_array($page) || empty($page['data']))
             && function_exists('cmsScopedFileCacheGetAny')
         ) {
+            // Stale fallback for live failures (was forceLive-only — an API
+            // outage turned expired cached pages into 404s).
             $stale = cmsScopedFileCacheGetAny($fileKey);
             if (is_array($stale) && !empty($stale['data']) && cmsPageIsPublished($stale)) {
                 $page = $stale;
