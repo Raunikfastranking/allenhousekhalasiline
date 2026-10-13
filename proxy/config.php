@@ -1,4 +1,23 @@
 <?php
+// Minimal .env loader — real environment variables always win over .env.
+$_envFile = dirname(__DIR__) . '/.env';
+if (is_file($_envFile)) {
+    foreach ((array) @file($_envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $_envLine) {
+        $_envLine = trim((string) $_envLine);
+        if ($_envLine === '' || $_envLine[0] === '#' || !str_contains($_envLine, '=')) {
+            continue;
+        }
+        [$_envKey, $_envVal] = array_map('trim', explode('=', $_envLine, 2));
+        if ($_envKey === '' || getenv($_envKey) !== false) {
+            continue;
+        }
+        $_envVal = trim($_envVal, "\"' \t");
+        putenv($_envKey . '=' . $_envVal);
+        $_SERVER[$_envKey] = $_ENV[$_envKey] = $_envVal;
+    }
+}
+unset($_envFile, $_envLine, $_envKey, $_envVal);
+
 // AWS private IP routing (Investigation Report §4.3) — avoids billable public loopback.
 $internalEnv = getenv('CMS_INTERNAL_BASE_URL');
 $serverAddr = $_SERVER['SERVER_ADDR'] ?? '';
@@ -328,6 +347,24 @@ if (!function_exists('cms_fetch_json_endpoint')) {
             }
         }
 
+        // Negative cache: dead/missing endpoints stay uncacheable above, so they
+        // would otherwise cost a live API call on EVERY request. Remember a
+        // recent failure for a short window instead.
+        if (
+            function_exists('cmsApiReadKeyCache')
+            && (!function_exists('cmsApiUsesFileCache') || cmsApiUsesFileCache())
+        ) {
+            $neg = cmsApiReadKeyCache($fileKey);
+            if (
+                is_array($neg['data'])
+                && !empty($neg['data']['_cms_neg_cache'])
+                && $neg['time'] > 0
+                && (time() - $neg['time']) < 300
+            ) {
+                return null;
+            }
+        }
+
         $primaryUrl = rtrim(CMS_API_URL, '/') . '/' . $endpoint;
         $legacyUrl = rtrim(LEGACY_CMS_API_URL, '/') . '/' . $endpoint;
         $preferPrimary = cms_is_new_cms_route($endpoint);
@@ -350,24 +387,9 @@ if (!function_exists('cms_fetch_json_endpoint')) {
             && cmsApiResponseIsUsable($data)
         ) {
             cmsApiStoreScopedKey($fileKey, $data);
+        } elseif (!is_array($data) && function_exists('cmsApiWriteKeyCache')) {
+            cmsApiWriteKeyCache($fileKey, ['status' => 'error', 'data' => [], '_cms_neg_cache' => true]);
         }
-
-        return $cache[$endpoint];
-
-        $primaryUrl = rtrim(CMS_API_URL, '/') . '/' . $endpoint;
-        $legacyUrl = rtrim(LEGACY_CMS_API_URL, '/') . '/' . $endpoint;
-        $preferPrimary = cms_is_new_cms_route($endpoint);
-
-        if ($preferPrimary) {
-            $data = cms_curl_get_json($primaryUrl);
-            if (!is_array($data)) {
-                $data = cms_curl_get_json($legacyUrl);
-            }
-        } else {
-            $data = cms_curl_get_json($legacyUrl);
-        }
-
-        $cache[$endpoint] = is_array($data) ? $data : null;
 
         return $cache[$endpoint];
     }
