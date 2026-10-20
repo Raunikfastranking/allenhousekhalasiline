@@ -76,44 +76,50 @@ function testimonialCardStyles(): void
         .home-testimonial-card .testimonial-text span,
         .home-testimonial-card .testimonial-text li,
         .home-testimonial-card .testimonial-text .full-text,
-        .home-testimonial-card .testimonial-text .full-text * {
+        .home-testimonial-card .testimonial-text .full-text *,
+        .home-testimonial-card .short-text,
+        .home-testimonial-card .full-text,
+        .home-testimonial-card .full-text * {
             color: #e5e7eb !important;
         }
 
-        .home-testimonial-card .testimonial-text a {
+        .home-testimonial-card .testimonial-text a,
+        .home-testimonial-card .full-text a {
             color: #ffffff !important;
             text-decoration: underline;
         }
 
-        .home-testimonial-card .testimonial-text .full-text.hidden {
+        .home-testimonial-card .testimonial-text .full-text.hidden,
+        .home-testimonial-card .full-text.hidden {
             display: none !important;
         }
 
-        .home-testimonial-card .testimonial-text .full-text:not(.hidden) {
+        .home-testimonial-card .full-text:not(.hidden) {
             display: block;
             max-height: 200px;
             overflow-y: auto;
             overflow-x: hidden;
-            padding-right: 6px;
+            padding-right: 8px;
             scrollbar-width: thin;
             scrollbar-color: rgba(255, 255, 255, 0.55) rgba(255, 255, 255, 0.12);
         }
 
-        .home-testimonial-card .testimonial-text .full-text:not(.hidden)::-webkit-scrollbar {
-            width: 6px;
+        .home-testimonial-card .full-text:not(.hidden)::-webkit-scrollbar {
+            width: 8px;
         }
 
-        .home-testimonial-card .testimonial-text .full-text:not(.hidden)::-webkit-scrollbar-track {
+        .home-testimonial-card .full-text:not(.hidden)::-webkit-scrollbar-track {
             background: rgba(255, 255, 255, 0.12);
             border-radius: 4px;
         }
 
-        .home-testimonial-card .testimonial-text .full-text:not(.hidden)::-webkit-scrollbar-thumb {
+        .home-testimonial-card .full-text:not(.hidden)::-webkit-scrollbar-thumb {
             background: rgba(255, 255, 255, 0.5);
             border-radius: 4px;
         }
 
-        .home-testimonial-card .testimonial-text .short-text.hidden {
+        .home-testimonial-card .testimonial-text .short-text.hidden,
+        .home-testimonial-card .short-text.hidden {
             display: none !important;
         }
 
@@ -214,11 +220,48 @@ function testimonialCardScripts(): void
                                 fullText.classList.add('hidden');
                                 button.textContent = 'Read more...';
                             } else {
+                                var scope = card.closest('.ah-testimonials-wrap') || document;
+                                scope.querySelectorAll('.home-testimonial-card .full-text:not(.hidden)').forEach(function (otherFull) {
+                                    if (otherFull === fullText) {
+                                        return;
+                                    }
+                                    otherFull.classList.add('hidden');
+                                    var otherCard = otherFull.closest('.home-testimonial-card');
+                                    if (!otherCard) {
+                                        return;
+                                    }
+                                    var otherShort = otherCard.querySelector('.short-text');
+                                    var otherButton = otherCard.querySelector('.moreless-button');
+                                    if (otherShort) {
+                                        otherShort.classList.remove('hidden');
+                                    }
+                                    if (otherButton) {
+                                        otherButton.textContent = 'Read more...';
+                                    }
+                                });
                                 shortText.classList.add('hidden');
                                 fullText.classList.remove('hidden');
+                                fullText.scrollTop = 0;
                                 button.textContent = 'Read less';
                             }
                             return;
+                        }
+                        var expanding = !para.classList.contains('expanded');
+                        if (expanding) {
+                            var paraCard = testimonialCardRoot(button);
+                            var paraScope = (paraCard && paraCard.closest('.ah-testimonials-wrap')) || document;
+                            paraScope.querySelectorAll('.home-testimonial-card .testimonial-text.expanded').forEach(function (otherPara) {
+                                if (otherPara === para) {
+                                    return;
+                                }
+                                otherPara.classList.remove('expanded');
+                                otherPara.classList.add('clamp-2');
+                                var otherCard = otherPara.closest('.home-testimonial-card');
+                                var otherButton = otherCard ? otherCard.querySelector('.moreless-button') : null;
+                                if (otherButton) {
+                                    otherButton.textContent = 'Read more...';
+                                }
+                            });
                         }
                         para.classList.toggle('expanded');
                         para.classList.toggle('clamp-2');
