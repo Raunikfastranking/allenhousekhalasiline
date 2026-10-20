@@ -107,7 +107,9 @@ if (!function_exists('cmsTestimonialsPageTabStyles')) {
                 text-align: center;
                 box-sizing: border-box;
             }
-            .ah-testimonials-wrap .ah-page-testimonial-card .testimonial-text {
+            .ah-testimonials-wrap .ah-page-testimonial-card .testimonial-text,
+            .ah-testimonials-wrap .ah-page-testimonial-card .short-text,
+            .ah-testimonials-wrap .ah-page-testimonial-card .full-text {
                 width: 100% !important;
                 word-wrap: break-word;
                 overflow-wrap: anywhere;
@@ -157,12 +159,33 @@ if (!function_exists('cmsTestimonialsPageTabStyles')) {
                     min-height: 0;
                     overflow: hidden;
                     text-align: left;
+                    align-self: stretch;
                 }
-                .ah-testimonials-wrap .ah-page-testimonial-card .testimonial-text {
+                .ah-testimonials-wrap .ah-page-testimonial-card .testimonial-text,
+                .ah-testimonials-wrap .ah-page-testimonial-card .short-text,
+                .ah-testimonials-wrap .ah-page-testimonial-card .full-text:not(.hidden) {
                     flex: 1 1 auto;
                     min-height: 0;
-                    overflow: hidden;
+                    max-height: none;
+                    overflow-x: hidden;
+                    overflow-y: auto;
                     text-align: left !important;
+                    scrollbar-width: thin;
+                    scrollbar-color: rgba(255, 255, 255, 0.55) rgba(255, 255, 255, 0.12);
+                }
+                .ah-testimonials-wrap .ah-page-testimonial-card .short-text::-webkit-scrollbar,
+                .ah-testimonials-wrap .ah-page-testimonial-card .full-text::-webkit-scrollbar {
+                    width: 8px;
+                }
+                .ah-testimonials-wrap .ah-page-testimonial-card .short-text::-webkit-scrollbar-track,
+                .ah-testimonials-wrap .ah-page-testimonial-card .full-text::-webkit-scrollbar-track {
+                    background: rgba(255, 255, 255, 0.12);
+                    border-radius: 4px;
+                }
+                .ah-testimonials-wrap .ah-page-testimonial-card .short-text::-webkit-scrollbar-thumb,
+                .ah-testimonials-wrap .ah-page-testimonial-card .full-text::-webkit-scrollbar-thumb {
+                    background: rgba(255, 255, 255, 0.5);
+                    border-radius: 4px;
                 }
                 .ah-testimonials-wrap .ah-page-testimonial-card .moreless-button {
                     margin-left: 0;
