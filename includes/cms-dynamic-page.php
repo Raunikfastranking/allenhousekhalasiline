@@ -47,6 +47,11 @@ $cmsAboutLayout = ($cms_page_slug ?? '') === 'about-us-page-khalasiline';
 $cmsFacilitiesLayout = ($cms_page_slug ?? '') === 'facilities-page-khalasiline';
 $cmsContactLayout = ($cms_page_slug ?? '') === 'contact-us-page-khalasiline';
 $cmsCampusTourLayout = ($cms_page_slug ?? '') === 'campus-tour-page-khalasiline';
+$cmsCambridgeLayout = ($cms_page_slug ?? '') === 'cambridge-curriculum-page-khalasiline';
+if ($cmsCambridgeLayout) {
+    $GLOBALS['cambridge_brochure_url'] = 'https://myschool-assets.s3.ap-south-1.amazonaws.com/aps/pdf-details/pdfs/6adc93a31e5f1_1792840611.pdf';
+    require_once dirname(__DIR__) . '/cambridge/cambridge-page.php';
+}
 if ($cmsPedagogyLayout) {
     require_once __DIR__ . '/pedagogy-cms-page.php';
 }
@@ -90,7 +95,9 @@ $GLOBALS['cms_dynamic_page_config'] = [
                 ? 'cmsRenderFacilitiesPage'
                 : ($cmsContactLayout
                     ? 'cmsRenderContactUsPage'
-                    : ($cmsCampusTourLayout ? 'cmsRenderCampusTourPage' : '')))),
+                    : ($cmsCampusTourLayout
+                        ? 'cmsRenderCampusTourPage'
+                        : ($cmsCambridgeLayout ? 'cmsRenderCambridgePage' : ''))))),
 ];
 
 require_once dirname(__DIR__) . '/shared/includes/cms-dynamic-page-runner.php';
