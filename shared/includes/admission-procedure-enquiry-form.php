@@ -47,9 +47,6 @@ if (!function_exists('cmsRenderAdmissionProcedureEnquiryForm')) {
         ?>
         <div class="<?= htmlspecialchars($wrapClass, ENT_QUOTES, 'UTF-8') ?>">
             <div id="admissionProcedureEnquiry" class="cms-admission-procedure-enquiry sm:mt-16 mt-10 mb-10 w-full">
-                <h2 class="text-center sm:text-[32px] text-[28px] font-[700] text-blue-main leading-9">
-                    <?= htmlspecialchars($heading, ENT_QUOTES, 'UTF-8') ?>
-                </h2>
                 <div id="ee-form-4-inline" data-ee-form-id="form-4" class="mt-8"></div>
             </div>
         </div>

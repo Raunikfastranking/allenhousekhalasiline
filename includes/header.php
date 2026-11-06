@@ -269,6 +269,18 @@ $allenNavItems = cmsNavItems();
     border-color: #ef4444;
     color: #fff;
 }
+/* ExtraaEdge thank-you modal/toast must sit above the site popup (z-index: 10050);
+   jquery-modal blocker has z-index 1050!important in vendor CSS, so use higher specificity */
+.modal-backdrop {
+    z-index: 10055 !important;
+}
+.modal.ee-form-widget-feedback,
+.toastr-container {
+    z-index: 10060 !important;
+}
+body > .jquery-modal {
+    z-index: 10060 !important;
+}
 </style>
 
 <script>
