@@ -298,6 +298,22 @@ window.addEventListener("DOMContentLoaded", function () {
         return;
     }
     window.__eeFormWidgetLoading = true;
+    /* On successful submit the widget appends a .ee-form-widget-feedback.success
+       thank-you modal to <body>; close the site enquiry popup behind it. */
+    new MutationObserver(function (mutations) {
+        for (var i = 0; i < mutations.length; i++) {
+            var nodes = mutations[i].addedNodes;
+            for (var j = 0; j < nodes.length; j++) {
+                var n = nodes[j];
+                if (n.nodeType !== 1) continue;
+                if ((n.matches && n.matches(".ee-form-widget-feedback.success"))
+                    || (n.querySelector && n.querySelector(".ee-form-widget-feedback.success"))) {
+                    if (window.closePopup) window.closePopup();
+                    return;
+                }
+            }
+        }
+    }).observe(document.body, { childList: true, subtree: true });
     var t = document.createElement("script");
     t.type = "text/javascript";
     t.onload = async function () {
