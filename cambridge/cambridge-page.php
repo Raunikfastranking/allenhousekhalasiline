@@ -752,131 +752,17 @@ if (!function_exists('cmsCambridgeRenderContact')) {
 
 if (!function_exists('cmsCambridgeRenderEnquiryForm')) {
     /**
-     * The design's enquiry form, wired to the site's working admission flow.
-     * Field ids match shared/includes/admission-procedure-form-init.php,
-     * which foot.php already loads on every page.
+     * The enquiry card is filled by the third-party ExtraaEdge form widget
+     * (same "form-4" as the site header popup). The loader script in
+     * includes/header.php initialises every [data-ee-form-id] mount on the
+     * page, so only the mount point and card shell live here.
      */
     function cmsCambridgeRenderEnquiryForm(): void
     {
-        $includesDir = dirname(__DIR__) . '/includes';
-        $includeBoard = !function_exists('cmsEnquiryFormIncludeBoard') || cmsEnquiryFormIncludeBoard();
         ?>
-        <div id="admissionProcedureEnquiry" class="cb-enquiry">
-            <div id="AdmissionFormPopup" class="cb-form-popup hidden" role="status">Form submitted successfully!</div>
-            <form id="AdmissionForm" class="enquiry-form" method="post">
-                <h3>Enquiry Form</h3>
-                <div class="form-grid">
-                    <label>Session*
-                        <select name="session" id="asession" required>
-                            <?php
-                            $sessionFile = $includesDir . '/session-api.php';
-                            $sessions = is_file($sessionFile) ? include $sessionFile : [];
-                            if (is_array($sessions) && $sessions !== []) {
-                                echo '<option value="" disabled selected>Select Session</option>';
-                                foreach ($sessions as $item) {
-                                    $sess = htmlspecialchars((string) (is_array($item) ? ($item['session'] ?? '') : ''), ENT_QUOTES, 'UTF-8');
-                                    if ($sess !== '') {
-                                        echo "<option value=\"{$sess}\">{$sess}</option>";
-                                    }
-                                }
-                            } else {
-                                echo '<option value="" disabled selected>Sessions unavailable</option>';
-                            }
-                            ?>
-                        </select>
-                    </label>
-                    <?php if ($includeBoard): ?>
-                    <label>Board / Curriculum*
-                        <select name="board" id="aboard" required>
-                            <?php
-                            $boardFile = $includesDir . '/board-api.php';
-                            if (is_file($boardFile)) {
-                                include $boardFile;
-                            } else {
-                                echo '<option value="" disabled selected>Boards unavailable</option>';
-                            }
-                            ?>
-                        </select>
-                        <span id="aboard-error" class="cb-field-error hidden">Please select a board.</span>
-                    </label>
-                    <?php endif; ?>
-                    <label>Grade*
-                        <select name="grade" id="agrade" required>
-                            <?php
-                            $gradeFile = $includesDir . '/grade-api.php';
-                            if (is_file($gradeFile)) {
-                                include $gradeFile;
-                            } else {
-                                echo '<option value="" disabled selected>Grades unavailable</option>';
-                            }
-                            ?>
-                        </select>
-                        <span id="aclassError" class="cb-field-error hidden">Please select a class.</span>
-                    </label>
-                    <label>Student Name*
-                        <input type="text" name="student-name" id="astudent_name" placeholder="Student Name" autocomplete="name" required>
-                        <span id="astudent-error" class="cb-field-error hidden">Only letters and spaces allowed.</span>
-                    </label>
-                    <label>Parent's Name*
-                        <input type="text" name="parent-name" id="aparent_name" placeholder="Parents Name" autocomplete="name">
-                        <span id="aparent-error" class="cb-field-error hidden">Only letters and spaces allowed.</span>
-                    </label>
-                    <label>Mobile No.*
-                        <input type="tel" name="mobile" id="amobile" placeholder="Mobile No." inputmode="tel" autocomplete="tel" required maxlength="10">
-                        <span id="amobile-error" class="cb-field-error hidden">Please enter valid phone number</span>
-                    </label>
-                    <label>Email*
-                        <input type="email" name="email" id="aemail" placeholder="E-mail" autocomplete="email">
-                        <span id="aemail-error" class="cb-field-error hidden">Please enter a valid email address.</span>
-                    </label>
-                    <div class="cb-city-field">
-                        <span class="cb-label">City*</span>
-                        <div id="admissionCityWrapper" class="cb-city customSelect" data-cms-city-dropdown="1">
-                            <select id="acity" name="city" class="cb-city-select hidden">
-                                <option value="">Select City</option>
-                                <?php
-                                $cityFile = $includesDir . '/get-city.php';
-                                $cityNames = [];
-                                if (is_file($cityFile)) {
-                                    $cmsGetCityMode = 'array';
-                                    $cityNames = include $cityFile;
-                                    if (!is_array($cityNames)) {
-                                        $cityNames = [];
-                                    }
-                                }
-                                foreach ($cityNames as $cityName) {
-                                    $safe = htmlspecialchars((string) $cityName, ENT_QUOTES, 'UTF-8');
-                                    echo "<option value=\"{$safe}\">{$safe}</option>";
-                                }
-                                if ($cityNames === []) {
-                                    echo "<option value=''>Cities unavailable</option>";
-                                }
-                                ?>
-                            </select>
-                            <div id="admissionCityTrigger" class="cb-city-trigger">
-                                <span class="selected-text">Select City</span>
-                                <span class="cb-city-caret">&#9660;</span>
-                            </div>
-                            <div id="admissionCityDropdown" class="cb-city-dropdown hidden">
-                                <input type="text" id="admissionCitySearch" placeholder="Search..." autocomplete="off">
-                                <ul id="admissionCityList"></ul>
-                            </div>
-                        </div>
-                        <span id="acity-error" class="cb-field-error hidden">Please select a city.</span>
-                    </div>
-                    <label>Pincode*
-                        <input type="text" name="pincode" id="apincode" placeholder="Enter your Pincode" inputmode="numeric" maxlength="6" oninput="this.value=this.value.replace(/\D/g,'')" required>
-                        <span id="apincode-error" class="cb-field-error hidden">Please enter a valid Pincode.</span>
-                    </label>
-                </div>
-                <input type="hidden" id="source" name="source" value="">
-                <label class="terms-check">
-                    <input type="checkbox" id="admissionTerms" required>
-                    <span>I agree to <a href="<?= htmlspecialchars(function_exists('site_base_url') ? site_base_url() . 'termsandconditions' : '/termsandconditions', ENT_QUOTES, 'UTF-8') ?>">Terms and Conditions</a>.</span>
-                </label>
-                <span id="admissionTermsError" class="cb-field-error hidden">You must agree to the terms and conditions.</span>
-                <button class="submit" type="submit" id="AsubmitBtn">Submit Enquiry</button>
-            </form>
+        <div id="AdmissionForm" class="enquiry-form cb-enquiry">
+            <h3>Enquiry Form</h3>
+            <div id="ee-form-4-cambridge" data-ee-form-id="form-4"></div>
         </div>
         <?php
     }
