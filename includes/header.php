@@ -140,7 +140,8 @@ $allenNavItems = cmsNavItems();
     margin: 0 0 12px;
     padding: 0;
 }
-#ee-form-4-inline .ee-form-heading {
+#ee-form-4-inline .ee-form-heading,
+#ee-form-4-cambridge .ee-form-heading {
     display: none;
 }
 .ee-form-widget .ee-form-instruction {
